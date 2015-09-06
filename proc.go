@@ -21,6 +21,8 @@ const (
 	statusSigBlk = "SigBlk"
 	statusSigIgn = "SigIgn"
 	statusSigCgt = "SigCgt"
+
+	socketLinkRegex = `socket:\[(\d+)\]`
 )
 
 type Proc struct {
@@ -157,8 +159,7 @@ func (status *ProcStatus) User() (*user.User, error) {
 }
 
 func (fd *Fd) SocketInode() string {
-	re := regexp.MustCompile(`socket:\[(\d+)\]`)
-	matches := re.FindStringSubmatch(filepath.Base(fd.Target))
+	matches := regexp.MustCompile(socketLinkRegex).FindStringSubmatch(filepath.Base(fd.Target))
 	if matches == nil {
 		return ""
 	}

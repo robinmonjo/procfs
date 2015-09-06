@@ -15,9 +15,7 @@ const (
 	inodeColumn     = 9
 )
 
-var (
-	protocols = []string{"tcp", "tcp6", "udp", "udp6"}
-)
+var protocols = []string{"tcp", "tcp6", "udp", "udp6"}
 
 type Socket struct {
 	Protocol string
@@ -25,7 +23,7 @@ type Socket struct {
 	Inode    string
 }
 
-func Net() ([]*Socket, error) {
+func ReadNet() ([]*Socket, error) {
 	var (
 		sockets = []*Socket{}
 		err     error
@@ -36,7 +34,7 @@ func Net() ([]*Socket, error) {
 	wg.Add(len(protocols))
 	for _, proto := range protocols {
 		go func(p string) {
-			s, e := parseNetfile(p)
+			s, e := parseNetFile(p)
 			mutex.Lock()
 			if e != nil {
 				err = e
@@ -52,7 +50,7 @@ func Net() ([]*Socket, error) {
 	return sockets, err
 }
 
-func parseNetfile(protocol string) ([]*Socket, error) {
+func parseNetFile(protocol string) ([]*Socket, error) {
 	f, err := os.Open(filepath.Join(Mountpoint, "net", protocol))
 	if err != nil {
 		return nil, err

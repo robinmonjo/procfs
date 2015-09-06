@@ -10,7 +10,7 @@ import (
 // DefaultMountpoint define the default mount point of the proc file system
 const DefaultMountpoint = "/proc"
 
-// MountPoint path of the proc file system mount point.
+// MountPoint is the path of the proc file system mount point.
 // Default to DefaultMountPoint
 var Mountpoint = DefaultMountpoint
 
@@ -26,10 +26,10 @@ func CountRunningProcs() (int, error) {
 
 // WalkFunc WalkFunc is the type of the function called for each process visited by WalkProcs.
 // The process argument contains the current process. If the function return false or an error,
-// the WalkProcs func stop, and reurn the eventual error
+// the WalkProcs func stop, and return the eventual error
 type WalkFunc func(process *Proc) (bool, error)
 
-// WalkProcesses walks all the processes and call walk on each process
+// WalkProcs walks all the processes and call walk on each process
 func WalkProcs(walk WalkFunc) error {
 	d, err := os.Open(Mountpoint)
 	if err != nil {

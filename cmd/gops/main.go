@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	sockets, err := procfs.Net()
+	sockets, err := procfs.ReadNet()
 	if err != nil {
 		panic(err)
 	}

@@ -4,9 +4,9 @@ import (
 	"testing"
 )
 
-func TestNet(t *testing.T) {
+func TestReadNet(t *testing.T) {
 	Mountpoint = "./assets/proc"
-	sockets, err := Net()
+	sockets, err := ReadNet()
 	if err != nil {
 		t.Fatal(err)
 	}
