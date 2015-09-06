@@ -13,12 +13,22 @@ import (
 	"syscall"
 )
 
-type Process struct {
+const (
+	statusName   = "Name"
+	statusPPid   = "PPid"
+	statusState  = "State"
+	statusUid    = "Uid"
+	statusSigBlk = "SigBlk"
+	statusSigIgn = "SigIgn"
+	statusSigCgt = "SigCgt"
+)
+
+type Proc struct {
 	Pid int
 }
 
 //store information about a process, found in /proc/pid/status
-type ProcessStatus struct {
+type ProcStatus struct {
 	Name   string
 	PPid   int
 	State  string
@@ -34,49 +44,47 @@ type Fd struct {
 	Target string
 }
 
-//return ProcessStatus of the process
-func (p *Process) Status() (*ProcessStatus, error) {
+//return ProcStatus of the process
+func (p *Proc) Status() (*ProcStatus, error) {
 	f, err := os.Open(fmt.Sprintf("%s/%d/status", Mountpoint, p.Pid))
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
 
-	s := &ProcessStatus{}
+	s := &ProcStatus{}
 
 	scanner := bufio.NewScanner(f)
 
 	for scanner.Scan() {
-		line := scanner.Text()
-		record := strings.SplitN(line, ":", 2)
-		switch record[0] {
-		case "Name":
-			s.Name = strings.TrimSpace(record[1])
-		case "PPid":
-			s.PPid, err = strconv.Atoi(strings.TrimSpace(record[1]))
-		case "State":
-			s.State = strings.TrimSpace(record[1])
-		case "Uid":
-			s.Uid = strings.Fields(record[1])[0]
-		case "SigBlk":
-			s.SigBlk, err = decodeSigMask(record[1])
-		case "SigIgn":
-			s.SigIgn, err = decodeSigMask(record[1])
-		case "SigCgt":
-			s.SigCgt, err = decodeSigMask(record[1])
-		}
-		if err != nil {
-			return nil, err
+		records := strings.SplitN(scanner.Text(), ":", 2)
+		key, value := records[0], strings.TrimSpace(records[1])
+
+		switch key {
+		case statusName:
+			s.Name = value
+		case statusPPid:
+			s.PPid, _ = strconv.Atoi(value)
+		case statusState:
+			s.State = value
+		case statusUid:
+			s.Uid = strings.Fields(value)[0]
+		case statusSigBlk:
+			s.SigBlk = decodeSigMask(value)
+		case statusSigIgn:
+			s.SigIgn = decodeSigMask(value)
+		case statusSigCgt:
+			s.SigCgt = decodeSigMask(value)
 		}
 	}
 
-	return s, nil
+	return s, scanner.Err()
 }
 
 //return all process's direct children
-func (p *Process) Children() ([]*Process, error) {
-	children := []*Process{}
-	err := WalkProcesses(func(process *Process) (bool, error) {
+func (p *Proc) Children() ([]*Proc, error) {
+	children := []*Proc{}
+	err := WalkProcs(func(process *Proc) (bool, error) {
 		if process.Pid == p.Pid { //myself
 			return true, nil
 		}
@@ -97,8 +105,8 @@ func (p *Process) Children() ([]*Process, error) {
 }
 
 // return process's descendants (children, grand children ...)
-func (p *Process) Descendants() ([]*Process, error) {
-	descendants := []*Process{p}
+func (p *Proc) Descendants() ([]*Proc, error) {
+	descendants := []*Proc{p}
 	cursor := 0
 
 	for {
@@ -118,32 +126,33 @@ func (p *Process) Descendants() ([]*Process, error) {
 	return descendants[1:], nil //remove self from the descendants
 }
 
-func (p *Process) Fds() ([]*Fd, error) {
+func (p *Proc) Fds() ([]*Fd, error) {
 	d, err := os.Open(fmt.Sprintf("%s/%d/fd", Mountpoint, p.Pid))
 	if err != nil {
 		return nil, err
 	}
 	defer d.Close()
-	fis, err := d.Readdir(-1)
+
+	names, err := d.Readdirnames(-1)
 	if err != nil {
 		return nil, err
 	}
 	fds := []*Fd{}
-	for _, fi := range fis {
-		targ, err := os.Readlink(filepath.Join(d.Name(), fi.Name()))
+	for _, name := range names {
+		targ, err := os.Readlink(filepath.Join(d.Name(), name))
 		if err != nil {
 			return nil, err
 		}
 
 		fds = append(fds, &Fd{
-			Source: fi.Name(),
+			Source: name,
 			Target: targ,
 		})
 	}
 	return fds, nil
 }
 
-func (status *ProcessStatus) User() (*user.User, error) {
+func (status *ProcStatus) User() (*user.User, error) {
 	return user.LookupId(status.Uid)
 }
 
@@ -158,11 +167,8 @@ func (fd *Fd) SocketInode() string {
 
 //implementation of signal mask decoding
 //ref: http://jeff66ruan.github.io/blog/2014/03/31/sigpnd-sigblk-sigign-sigcgt-in-proc-status-file/
-func decodeSigMask(maskStr string) ([]syscall.Signal, error) {
-	b, err := hex.DecodeString(strings.TrimSpace(maskStr))
-	if err != nil {
-		return nil, err
-	}
+func decodeSigMask(maskStr string) []syscall.Signal {
+	b, _ := hex.DecodeString(maskStr)
 	//interested in the 32 right bits of the mask
 	mask := int32(b[4])<<24 | int32(b[5])<<16 | int32(b[6])<<8 | int32(b[7])
 
@@ -175,5 +181,5 @@ func decodeSigMask(maskStr string) ([]syscall.Signal, error) {
 		}
 	}
 
-	return signals, nil
+	return signals
 }

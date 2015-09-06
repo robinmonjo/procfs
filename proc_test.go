@@ -15,10 +15,8 @@ func TestDecodeSigMask(t *testing.T) {
 	}
 
 	for i, mask := range masks {
-		signals, err := decodeSigMask(mask)
-		if err != nil {
-			t.Fatal(err)
-		}
+		signals := decodeSigMask(mask)
+
 		exp := expected[i]
 		if len(exp) != len(signals) {
 			t.Fatalf("expected %d signals got %d for mask %s", len(exp), len(signals), mask)
@@ -34,7 +32,7 @@ func TestDecodeSigMask(t *testing.T) {
 
 func TestParseStatusFile(t *testing.T) {
 	Mountpoint = "./assets/proc"
-	p := &Process{
+	p := &Proc{
 		Pid: 1,
 	}
 
@@ -68,7 +66,7 @@ func TestParseStatusFile(t *testing.T) {
 
 func TestFds(t *testing.T) {
 	Mountpoint = "./assets/proc"
-	p := &Process{
+	p := &Proc{
 		Pid: 9,
 	}
 	fds, err := p.Fds()
@@ -103,16 +101,16 @@ func TestFds(t *testing.T) {
 
 func TestChildren(t *testing.T) {
 	Mountpoint = "./assets/proc"
-	p := &Process{
+	p := &Proc{
 		Pid: 9,
 	}
 	children, err := p.Children()
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := []*Process{
-		&Process{Pid: 12},
-		&Process{Pid: 14},
+	expected := []*Proc{
+		&Proc{Pid: 12},
+		&Proc{Pid: 14},
 	}
 	if !reflect.DeepEqual(children, expected) {
 		t.Fatalf("expected processes %#v, got %#v", expected, children)
@@ -121,7 +119,7 @@ func TestChildren(t *testing.T) {
 
 func TestNoChild(t *testing.T) {
 	Mountpoint = "./assets/proc"
-	p := &Process{
+	p := &Proc{
 		Pid: 12,
 	}
 	children, err := p.Children()
@@ -135,7 +133,7 @@ func TestNoChild(t *testing.T) {
 
 func TestDescendants(t *testing.T) {
 	Mountpoint = "./assets/proc"
-	p := &Process{
+	p := &Proc{
 		Pid: 1,
 	}
 	descendants, err := p.Descendants()
@@ -143,10 +141,10 @@ func TestDescendants(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expected := []*Process{
-		&Process{Pid: 9},
-		&Process{Pid: 12},
-		&Process{Pid: 14},
+	expected := []*Proc{
+		&Proc{Pid: 9},
+		&Proc{Pid: 12},
+		&Proc{Pid: 14},
 	}
 	if !reflect.DeepEqual(descendants, expected) {
 		t.Fatalf("expected processes %#v, got %#v", expected, descendants)
@@ -155,7 +153,7 @@ func TestDescendants(t *testing.T) {
 
 func TestNoDescendant(t *testing.T) {
 	Mountpoint = "./assets/proc"
-	p := &Process{
+	p := &Proc{
 		Pid: 14,
 	}
 	descendants, err := p.Descendants()

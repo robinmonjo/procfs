@@ -4,9 +4,9 @@ import (
 	"testing"
 )
 
-func TestCountRunningProcesses(t *testing.T) {
+func TestCountRunningProcs(t *testing.T) {
 	Mountpoint = "./assets/proc"
-	c, err := CountRunningProcesses()
+	c, err := CountRunningProcs()
 	if err != nil {
 		t.Fatal(err)
 	}

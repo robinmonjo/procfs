@@ -62,22 +62,14 @@ func parseNetfile(protocol string) ([]*Socket, error) {
 	sockets := []*Socket{}
 
 	scanner := bufio.NewScanner(f)
+	scanner.Scan() //flush file header
 
-	flushedHeader := false
 	for scanner.Scan() {
-		line := scanner.Text()
-		if !flushedHeader {
-			flushedHeader = true
-			continue
-		}
-		sock := processLine(line, protocol)
+		sock := processLine(scanner.Text(), protocol)
 		sockets = append(sockets, sock)
 	}
 
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-	return sockets, nil
+	return sockets, scanner.Err()
 }
 
 func processLine(line, protocol string) *Socket {
@@ -89,7 +81,7 @@ func processLine(line, protocol string) *Socket {
 
 	for i, c := range columns {
 		switch i {
-		case localAddrColumn: // "0.0.0.0:9999"
+		case localAddrColumn:
 			hexPort := strings.Split(c, ":")[1]
 			p, _ := strconv.ParseInt(hexPort, 16, 32)
 			s.BindPort = strconv.Itoa(int(p))

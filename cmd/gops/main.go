@@ -15,7 +15,7 @@ func main() {
 	}
 	sort.Sort(procfs.Sockets(sockets)) //sort output by inode for faster search
 
-	err = procfs.WalkProcesses(func(p *procfs.Process) (bool, error) {
+	err = procfs.WalkProcs(func(p *procfs.Proc) (bool, error) {
 		status, err := p.Status()
 		if err != nil {
 			if os.IsNotExist(err) {
