@@ -2,6 +2,8 @@ package procfs
 
 import (
 	"bufio"
+	"encoding/hex"
+	"net"
 	"os"
 	"path/filepath"
 	"sort"
@@ -11,16 +13,20 @@ import (
 )
 
 const (
-	localAddrColumn = 1
-	inodeColumn     = 9
+	localAddrCol  = 1
+	remoteAddrCol = 2
+	inodeCol      = 9
 )
 
 var protocols = []string{"tcp", "tcp6", "udp", "udp6"}
 
 type Socket struct {
-	Protocol string
-	BindPort string
-	Inode    string
+	Protocol   string
+	LocalIP    net.IP
+	LocalPort  string
+	RemoteIP   net.IP
+	RemotePort string
+	Inode      string
 }
 
 func ReadNet() ([]*Socket, error) {
@@ -79,11 +85,15 @@ func processLine(line, protocol string) *Socket {
 
 	for i, c := range columns {
 		switch i {
-		case localAddrColumn:
-			hexPort := strings.Split(c, ":")[1]
-			p, _ := strconv.ParseInt(hexPort, 16, 32)
-			s.BindPort = strconv.Itoa(int(p))
-		case inodeColumn:
+		case localAddrCol:
+			addr := strings.Split(c, ":")
+			s.LocalIP = hexStringToIP(addr[0])
+			s.LocalPort = hexStringToDecimalPort(addr[1])
+		case remoteAddrCol:
+			addr := strings.Split(c, ":")
+			s.RemoteIP = hexStringToIP(addr[0])
+			s.RemotePort = hexStringToDecimalPort(addr[1])
+		case inodeCol:
 			s.Inode = c
 		}
 	}
@@ -106,4 +116,15 @@ func (sockets Sockets) Find(inode string) *Socket {
 		return sockets[i]
 	}
 	return nil
+}
+
+//utilities
+func hexStringToIP(str string) net.IP {
+	b, _ := hex.DecodeString(str)
+	return net.IP(b)
+}
+
+func hexStringToDecimalPort(str string) string {
+	p, _ := strconv.ParseInt(str, 16, 32)
+	return strconv.Itoa(int(p))
 }

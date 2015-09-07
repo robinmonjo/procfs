@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -29,6 +30,13 @@ type Proc struct {
 	Pid int
 }
 
+// Self returns a process for the current process.
+func Self() *Proc {
+	return &Proc{
+		Pid: os.Getpid(),
+	}
+}
+
 //store information about a process, found in /proc/pid/status
 type ProcStatus struct {
 	Name   string
@@ -46,9 +54,13 @@ type Fd struct {
 	Target string
 }
 
+func (p *Proc) dir() string {
+	return fmt.Sprintf("%s/%d", Mountpoint, p.Pid)
+}
+
 //return ProcStatus of the process
 func (p *Proc) Status() (*ProcStatus, error) {
-	f, err := os.Open(fmt.Sprintf("%s/%d/status", Mountpoint, p.Pid))
+	f, err := os.Open(filepath.Join(p.dir(), "status"))
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +141,7 @@ func (p *Proc) Descendants() ([]*Proc, error) {
 }
 
 func (p *Proc) Fds() ([]*Fd, error) {
-	d, err := os.Open(fmt.Sprintf("%s/%d/fd", Mountpoint, p.Pid))
+	d, err := os.Open(filepath.Join(p.dir(), "fd"))
 	if err != nil {
 		return nil, err
 	}
@@ -152,6 +164,19 @@ func (p *Proc) Fds() ([]*Fd, error) {
 		})
 	}
 	return fds, nil
+}
+
+func (p *Proc) CmdLine() ([]string, error) {
+	b, err := ioutil.ReadFile(filepath.Join(p.dir(), "cmdline"))
+	if err != nil {
+		return nil, err
+	}
+
+	if len(b) < 1 {
+		return nil, nil
+	}
+
+	return strings.Split(string(b[:len(b)-1]), string(byte(0))), nil
 }
 
 func (status *ProcStatus) User() (*user.User, error) {

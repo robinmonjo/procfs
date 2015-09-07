@@ -43,7 +43,7 @@ func main() {
 		ports := []string{}
 		for _, inode := range inodes {
 			if s := procfs.Sockets(sockets).Find(inode); s != nil {
-				ports = append(ports, s.BindPort)
+				ports = append(ports, s.LocalPort)
 			}
 		}
 
@@ -52,7 +52,14 @@ func main() {
 			panic(err)
 		}
 
-		fmt.Printf("%s %d %d %s %v\n", user.Username, p.Pid, status.PPid, status.Name, ports)
+		n, err := p.CmdLine()
+		if err != nil {
+			panic(err)
+		}
+		if n == nil {
+			n = []string{status.Name}
+		}
+		fmt.Printf("%s %d %d %v %v\n", user.Username, p.Pid, status.PPid, n, ports)
 
 		return true, nil
 	})
