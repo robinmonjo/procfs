@@ -26,23 +26,25 @@ const (
 	socketLinkRegex = `socket:\[(\d+)\]`
 )
 
+// Proc provides information about a running process
 type Proc struct {
+	// Process ID
 	Pid int
 }
 
-// Self returns a process for the current process.
+// Self returns a Proc struct for the current process
 func Self() *Proc {
 	return &Proc{
 		Pid: os.Getpid(),
 	}
 }
 
-//store information about a process, found in /proc/pid/status
+// ProcStatus store data about the process status, as found in /procfs/$PID/status
 type ProcStatus struct {
 	Name   string
 	PPid   int
 	State  string
-	Uid    string
+	Uid    int
 	SigBlk []syscall.Signal
 	SigIgn []syscall.Signal
 	SigCgt []syscall.Signal
@@ -82,7 +84,7 @@ func (p *Proc) Status() (*ProcStatus, error) {
 		case statusState:
 			s.State = value
 		case statusUid:
-			s.Uid = strings.Fields(value)[0]
+			s.Uid, _ = strconv.Atoi(strings.Fields(value)[0])
 		case statusSigBlk:
 			s.SigBlk = decodeSigMask(value)
 		case statusSigIgn:
@@ -180,7 +182,7 @@ func (p *Proc) CmdLine() ([]string, error) {
 }
 
 func (status *ProcStatus) User() (*user.User, error) {
-	return user.LookupId(status.Uid)
+	return user.LookupId(strconv.Itoa(status.Uid))
 }
 
 func (fd *Fd) SocketInode() string {

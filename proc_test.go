@@ -47,8 +47,8 @@ func TestParseStatusFile(t *testing.T) {
 	if ps.PPid != 0 {
 		t.Fatalf("expected PPid 0, got %d", ps.PPid)
 	}
-	if ps.Uid != "0" {
-		t.Fatalf("expected Uid 0, got %q", ps.Uid)
+	if ps.Uid != 0 {
+		t.Fatalf("expected Uid 0, got %d", ps.Uid)
 	}
 	if ps.State != "S (sleeping)" {
 		t.Fatalf("expected State S (sleeping), got %q", ps.State)

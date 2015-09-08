@@ -14,4 +14,4 @@ clean:
 	rm -rf $(GOPATH)
 
 test:
-	go test -cover
+	GOPATH=$(GOPATH) go test -cover

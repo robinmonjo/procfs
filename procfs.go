@@ -1,5 +1,3 @@
-// Package procfs provides primitives for interacting with the linux proc
-// virtual file system
 package procfs
 
 import (
