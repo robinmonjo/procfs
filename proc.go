@@ -50,7 +50,7 @@ type ProcStatus struct {
 	SigCgt []syscall.Signal
 }
 
-//file descriptor are symlinks
+//file descriptors are symlinks
 type Fd struct {
 	Source string
 	Target string
@@ -142,6 +142,7 @@ func (p *Proc) Descendants() ([]*Proc, error) {
 	return descendants[1:], nil //remove self from the descendants
 }
 
+// returns a list of file descriptors as if /proc/$PID/fd
 func (p *Proc) Fds() ([]*Fd, error) {
 	d, err := os.Open(filepath.Join(p.dir(), "fd"))
 	if err != nil {
@@ -168,6 +169,7 @@ func (p *Proc) Fds() ([]*Fd, error) {
 	return fds, nil
 }
 
+// return process command line (i.e: ls -al)
 func (p *Proc) CmdLine() ([]string, error) {
 	b, err := ioutil.ReadFile(filepath.Join(p.dir(), "cmdline"))
 	if err != nil {
@@ -181,6 +183,7 @@ func (p *Proc) CmdLine() ([]string, error) {
 	return strings.Split(string(b[:len(b)-1]), string(byte(0))), nil
 }
 
+// returns process owner
 func (status *ProcStatus) User() (*user.User, error) {
 	return user.LookupId(strconv.Itoa(status.Uid))
 }

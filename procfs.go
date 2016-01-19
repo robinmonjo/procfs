@@ -12,7 +12,7 @@ const DefaultMountpoint = "/proc"
 // Default to DefaultMountPoint
 var Mountpoint = DefaultMountpoint
 
-// CountRunningProces return the number of running processes or an error
+// CountRunningProces return the number of running processes or an error if any
 func CountRunningProcs() (int, error) {
 	cpt := 0
 	err := WalkProcs(func(process *Proc) (bool, error) {
@@ -24,7 +24,7 @@ func CountRunningProcs() (int, error) {
 
 // WalkFunc WalkFunc is the type of the function called for each process visited by WalkProcs.
 // The process argument contains the current process. If the function return false or an error,
-// the WalkProcs func stop, and return the eventual error
+// the WalkProcs func stop, and returns the eventual error
 type WalkFunc func(process *Proc) (bool, error)
 
 // WalkProcs walks all the processes and call walk on each process
